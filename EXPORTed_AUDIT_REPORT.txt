@@ -1,0 +1,294 @@
+================================================================================
+SuzuVisualLab 全系统只读代码审计与运行状态报告
+生成时间：2026/08/12
+================================================================================
+
+一、文件清单与核心类型定义
+
+1. 核心文件列表：
+   - src/hooks/useWorkflow.ts
+   - src/core/WorkflowExecutor.ts
+   - src/components/Node/CustomNode.tsx
+   - src/components/Node/NodeContent/InputNodeContent.tsx
+   - src/adapter/reactFlowAdapter.ts
+   - src/components/Canvas/FlowCanvas.tsx
+   - src/core/NodeInstance.ts
+   - src/core/ResourceStore.ts
+
+2. 关键类型定义 (NodeInstance.ts):
+```typescript
+export interface NodeInstance {
+  id: string;
+  type: string;
+  position: { x: number; y: number };
+  parameters: Record<string, any>;
+  dirty?: boolean;
+  outputRevision?: number;
+  outputResourceId?: string;
+  lastExecutedSignature?: string;
+}
+```
+
+--------------------------------------------------------------------------------
+二、完整源码抄录
+
+1. src/hooks/useWorkflow.ts:
+--------------------------------------------------------------------------------
+import { useState, useCallback, useEffect } from 'react';
+import { NodeInstance } from '../core/NodeInstance';
+import { Connection } from '../core/Connection';
+import { WorkflowData } from '../core/Workflow';
+import { nodeRegistry } from '../registry/nodeRegistry';
+import { resourceStore } from '../core/ResourceStore';
+import { workflowExecutor } from '../core/WorkflowExecutor';
+
+export function useWorkflow() {
+  const [nodes, setNodes] = useState<NodeInstance[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
+
+  const getDownstreamNodeIds = useCallback((startNodeId: string): Set<string> => {
+    const activeConnections = (window as any).__SUZU_WORKFLOW_DATA__?.connections || connections;
+    const downstream = new Set<string>();
+    const queue = [startNodeId];
+
+    while (queue.length > 0) {
+      const currId = queue.shift()!;
+      const outgoingConns = activeConnections.filter((c: Connection) => c.sourceNodeId === currId);
+      for (const conn of outgoingConns) {
+        if (!downstream.has(conn.targetNodeId)) {
+          downstream.add(conn.targetNodeId);
+          queue.push(conn.targetNodeId);
+        }
+      }
+    }
+    return downstream;
+  }, [connections]);
+
+  const cleanNodesDirty = useCallback((nodeIdsToClean: string[]) => {
+    const cleanSet = new Set(nodeIdsToClean);
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => {
+        if (cleanSet.has(node.id)) {
+          return { ...node, dirty: false };
+        }
+        return node;
+      })
+    );
+  }, []);
+
+  const recordNodeExecuted = useCallback((nodeId: string) => {
+    const currentConns = (window as any).__SUZU_WORKFLOW_DATA__?.connections || connections;
+
+    setNodeVersions((prev) => {
+      const currentVer = prev[nodeId] || 0;
+      const nextVer = currentVer + 1;
+      const updatedNodeVersions = { ...prev, [nodeId]: nextVer };
+
+      setLastConsumedVersions((lastConsumedPrev) => {
+        const incomingConns = currentConns.filter((c: Connection) => c.targetNodeId === nodeId);
+        const targetConsumed = { ...(lastConsumedPrev[nodeId] || {}) };
+
+        for (const conn of incomingConns) {
+          const edgeKey = `${conn.sourceNodeId}:${conn.sourcePortId}->${conn.targetNodeId}:${conn.targetPortId}`;
+          const sourceVer = updatedNodeVersions[conn.sourceNodeId] || prev[conn.sourceNodeId] || 0;
+          targetConsumed[edgeKey] = sourceVer;
+        }
+
+        return { ...lastConsumedPrev, [nodeId]: targetConsumed };
+      });
+
+      return updatedNodeVersions;
+    });
+
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => {
+        if (node.id === nodeId) {
+          const currentRev = node.outputRevision || 0;
+          return { ...node, dirty: false, outputRevision: currentRev + 1 };
+        }
+        return node;
+      })
+    );
+  }, [connections]);
+
+  const markNodeAndDownstreamDirty = useCallback((nodeId: string) => {
+    const downstreamIds = getDownstreamNodeIds(nodeId);
+    const affectedNodeIds = new Set([nodeId, ...Array.from(downstreamIds)]);
+
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => {
+        if (affectedNodeIds.has(node.id)) {
+          return { ...node, dirty: true };
+        }
+        return node;
+      })
+    );
+  }, [getDownstreamNodeIds]);
+
+  useEffect(() => {
+    (window as any).__SUZU_MARK_DIRTY__ = markNodeAndDownstreamDirty;
+    (window as any).__SUZU_CLEAN_NODES_DIRTY__ = cleanNodesDirty;
+    (window as any).__SUZU_RECORD_EXECUTED__ = recordNodeExecuted;
+  }, [markNodeAndDownstreamDirty, cleanNodesDirty, recordNodeExecuted]);
+
+  return { nodes, connections, markNodeAndDownstreamDirty, recordNodeExecuted, cleanNodesDirty };
+}
+
+--------------------------------------------------------------------------------
+2. src/core/WorkflowExecutor.ts:
+--------------------------------------------------------------------------------
+export class WorkflowExecutor {
+  public computeExecutionSignature(node: NodeInstance, workflow: WorkflowData, nodeVersions: Record<string, number> = {}, processorVersion = 'v1.0') {
+    const incomingConns = (workflow.connections || [])
+      .filter((c: Connection) => c.targetNodeId === node.id)
+      .sort((a, b) => a.targetPortId.localeCompare(b.targetPortId));
+
+    const inputResourceIds: string[] = [];
+    const upstreamRevisions: Record<string, number> = {};
+
+    for (const conn of incomingConns) {
+      const sourceState = this.getExecutionState(conn.sourceNodeId);
+      const resId = sourceState.outputResourceId;
+      if (resId) {
+        inputResourceIds.push(`${conn.targetPortId}:${resId}`);
+      }
+      upstreamRevisions[conn.sourceNodeId] = nodeVersions[conn.sourceNodeId] || 0;
+    }
+
+    const userParams: Record<string, any> = {};
+    if (node.parameters) {
+      Object.keys(node.parameters)
+        .filter((k) => (node.type === 'input.image' ? k !== 'outputResourceId' : k !== 'resourceId' && k !== 'outputResourceId'))
+        .sort()
+        .forEach((k) => {
+          userParams[k] = node.parameters[k];
+        });
+    }
+
+    const signatureObj = { nodeType: node.type, processorVersion, userParams, inputResourceIds, upstreamRevisions };
+    return { signature: JSON.stringify(signatureObj), inputResourceIds, upstreamRevisions };
+  }
+
+  async executeToNode(targetNodeId: string, workflow: WorkflowData, nodeVersions: Record<string, number> = {}): Promise<ExecutionPathResult> {
+    const upstreamIds = this.getUpstreamNodeIds(targetNodeId, workflow.connections);
+    const allRelevantIds = [...upstreamIds, targetNodeId];
+    const sortedIds = this.topologicalSort(allRelevantIds, workflow.connections);
+
+    const processedNodeIds: string[] = [];
+    const skippedNodeIds: string[] = [];
+
+    for (const nodeId of sortedIds) {
+      const node = workflow.nodes.find((n) => n.id === nodeId);
+      if (!node) continue;
+
+      const { signature } = this.computeExecutionSignature(node, workflow, nodeVersions);
+      const cache = this.executionCache.get(nodeId);
+      const currentState = this.getExecutionState(nodeId);
+
+      if (cache && cache.paramHash === signature && currentState.status === 'success' && currentState.outputResourceId && resourceStore.getResource(currentState.outputResourceId)) {
+        node.dirty = false;
+        node.lastExecutedSignature = signature;
+        skippedNodeIds.push(nodeId);
+        continue;
+      }
+
+      this.setExecutionState(nodeId, { status: 'running', errorMessage: undefined });
+      // Processor Execution Code ...
+      node.dirty = false;
+      node.lastExecutedSignature = signature;
+      this.executionCache.set(nodeId, { paramHash: signature, resourceId: result.resourceId });
+      this.setExecutionState(nodeId, { status: 'success', outputResourceId: result.resourceId });
+      processedNodeIds.push(nodeId);
+    }
+
+    return { success: true, processedNodeIds, skippedNodeIds };
+  }
+}
+
+--------------------------------------------------------------------------------
+3. src/adapter/reactFlowAdapter.ts:
+--------------------------------------------------------------------------------
+export function coreConnectionsToFlowEdges(
+  connections: Connection[],
+  enableAnimation: boolean = true,
+  selectedNodeId: string | null = null,
+  nodeVersions: Record<string, number> = {},
+  lastConsumedVersions: Record<string, Record<string, number>> = {},
+  validNodeIds?: Set<string>,
+  nodesMap?: Map<string, NodeInstance>
+): RFEdge[] {
+  return connections.map((conn) => {
+    const edgeKey = `${conn.sourceNodeId}:${conn.sourcePortId}->${conn.targetNodeId}:${conn.targetPortId}`;
+    const sourceNode = nodesMap?.get(conn.sourceNodeId);
+    const sourceVer = sourceNode?.outputRevision ?? nodeVersions[conn.sourceNodeId] ?? 0;
+    const consumedVer = lastConsumedVersions[conn.targetNodeId]?.[edgeKey] ?? 0;
+
+    const isSourceDirty = !!sourceNode?.dirty;
+    const isVersionUnconsumed = sourceVer > consumedVer;
+    const isEdgeDirty = isSourceDirty || isVersionUnconsumed;
+
+    let edgeStyle: React.CSSProperties = { stroke: '#3b82f6', strokeWidth: 2.5 };
+
+    if (isEdgeDirty) {
+      edgeStyle = { stroke: '#facc15', strokeWidth: 3.5 }; // 黄色
+    }
+
+    return {
+      id: conn.id,
+      source: conn.sourceNodeId,
+      sourceHandle: conn.sourcePortId,
+      target: conn.targetNodeId,
+      targetHandle: conn.targetPortId,
+      style: edgeStyle
+    };
+  });
+}
+
+--------------------------------------------------------------------------------
+三、所有写点检索与格式化输出
+
+1. dirty 写入点：
+   - useWorkflow.ts (markNodeAndDownstreamDirty): 行号 136, 将 [startNode, ...downstream] 节点的 dirty 设为 true。
+   - useWorkflow.ts (cleanNodesDirty): 行号 118, 将 cleanSet 包含的节点的 dirty 设为 false。
+   - useWorkflow.ts (recordNodeExecuted): 行号 101, 成功后将当前节点 dirty 设为 false。
+   - WorkflowExecutor.ts (executeToNode): 行号 130, 缓存 Skip 或 Run 成功时将 node.dirty 设为 false。
+
+2. outputRevision 写入点：
+   - useWorkflow.ts (recordNodeExecuted): 行号 102, 成功执行后 node.outputRevision += 1。
+
+3. lastConsumedVersions 写入点：
+   - useWorkflow.ts (recordNodeExecuted): 行号 85, 记录 targetNodeId 对各条边的 consumedVer = sourceVer。
+
+--------------------------------------------------------------------------------
+四、真实调用链分析
+
+A. 导入图片调用链：
+   InputNodeContent.handleCardImageUpload
+   → resourceStore.addResource (获取 newResourceId)
+   → onCommitParameter('resourceId', newResourceId)
+   → __SUZU_MARK_DIRTY__(instance.id) (将 A, B, C, D 设为 dirty=true)
+   → workflowExecutor.executeToNode('A', freshWorkflowSnapshot) (生成 A 的新输出，写回 executionStates)
+   → __SUZU_RECORD_EXECUTED__('A') (将 A.dirty 设为 false，递增 A.outputRevision，更新 A 出边消费版本)
+
+B. 点击滤镜 D 渲染：
+   CustomNode.commitAndExecute
+   → workflowExecutor.executeToNode('D', workflowSnapshot)
+   → 拓扑收集 [A, B, C, D]
+   → A 命中缓存 (Skipped)，B/C/D 重新运行 (Processed)
+   → processedNodeIds.forEach(id => onRecordNodeExecuted(id)) (递增 B, C, D 的 outputRevision)
+   → __SUZU_CLEAN_NODES_DIRTY__(validPathIds) (清除 A, B, C, D 的 dirty)
+
+--------------------------------------------------------------------------------
+五、构建与测试输出
+
+1. npm run build:
+   vite v6.4.3 building for production...
+   ✓ 1816 modules transformed.
+   dist/index.html                   0.80 kB │ gzip:   0.48 kB
+   dist/assets/index-DWmqguTD.css   20.73 kB │ gzip:   3.89 kB
+   dist/assets/index-D4rYI7BO.js   525.30 kB │ gzip: 160.61 kB
+   ✓ built in 2.88s
+
+2. 运行时验证说明：
+   由于限制在 VSCode CLI 无界面模式，未进行浏览器 Puppeteer/DOM 手动点击验证。
+================================================================================

@@ -1,0 +1,294 @@
+@import '@xyflow/react/dist/style.css';
+
+:root {
+  --bg-primary: #121316;
+  --bg-secondary: #1a1c23;
+  --bg-tertiary: #242731;
+  --bg-node: #1e2029;
+  --bg-node-header: #272a38;
+  
+  --preview-box-bg: transparent;
+  --preview-box-image: none;
+  
+  --border-color: #2e3240;
+  --border-color-active: #3b82f6;
+  
+  --text-primary: #eceef4;
+  --text-secondary: #9ea3b5;
+  --text-muted: #62687a;
+  
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-pink: #ec4899;
+  --accent-emerald: #10b981;
+  --accent-amber: #f59e0b;
+  
+  --port-image: #3b82f6;
+  --port-number: #10b981;
+  --port-color: #ec4899;
+  
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* React Flow Custom Overrides for Dark ComfyUI Theme */
+.react-flow {
+  --xy-edge-stroke-default: #3b82f6;
+  --xy-edge-stroke-selected-default: #60a5fa;
+  background-color: var(--bg-primary) !important;
+}
+
+.react-flow__background {
+  background-color: var(--bg-primary);
+}
+
+.react-flow__controls {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary) !important;
+}
+
+.react-flow__controls-button {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  fill: var(--text-secondary) !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--bg-tertiary) !important;
+  fill: var(--text-primary) !important;
+}
+
+.react-flow__minimap {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Custom Node Styling */
+.visual-node {
+  background-color: var(--bg-node);
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  min-width: 240px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: visible !important; /* Allow handles to project outside card */
+  position: relative;
+}
+
+.visual-node.selected {
+  border-color: var(--border-color-active);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.visual-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background-color: var(--bg-node-header);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.visual-node-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.visual-node-category-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+/* Node Ports */
+.visual-node-body {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.visual-node-ports-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.visual-node-ports-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.visual-node-port-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 28px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Custom React Flow Handle Styling for High Visibility */
+.react-flow__handle {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  border: 2px solid #1e2029 !important;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  z-index: 100 !important;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 1);
+  cursor: crosshair !important;
+}
+
+.react-flow__handle-left {
+  left: -7px !important;
+}
+
+.react-flow__handle-right {
+  right: -7px !important;
+}
+
+.visual-node-port-row.input {
+  padding-left: 14px;
+  justify-content: flex-start;
+}
+
+.visual-node-port-row.output {
+  padding-right: 14px;
+  justify-content: flex-end;
+}
+
+/* Parameter controls on Node */
+.visual-node-params {
+  padding: 0 14px;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.param-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.param-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+}
+
+.param-input-text, .param-select {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+}
+
+.param-input-text:focus, .param-select:focus {
+  border-color: var(--accent-blue);
+}
+
+.param-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.param-slider {
+  flex: 1;
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+}
+
+.param-slider-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Custom Preview Box Dynamic Styles */
+.node-preview-box {
+  background-color: var(--preview-box-bg);
+  background-image: var(--preview-box-image);
+  background-size: 12px 12px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  width: 100%;
+  min-height: 80px;
+  flex: 1;
+}
+
+/* Hide native cursor when magnifier lens is active */
+.preview-img-active-lens {
+  cursor: none !important;
+}

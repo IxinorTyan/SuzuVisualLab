@@ -1,0 +1,5 @@
+像素化借鉴:https://github.com/chuiliu/the-pixel-art
+颜色量化:https://github.com/safakozdek/Color-Quantization
+----------------------------------
+幻影坦克借鉴:https://github.com/TankFactory/Mirage_Colored
+ascii借鉴:https://github.com/Rainbow-Dreamer/ascii_converter
