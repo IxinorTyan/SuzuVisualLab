@@ -8,68 +8,11 @@ import { workflowExecutor } from '../core/WorkflowExecutor';
 import { useToast } from '../components/UI/ToastContainer';
 import { useLanguage } from '../i18n/LanguageContext';
 import { serializeWorkflow, deserializeWorkflow } from '../core/serialization';
-
-const DEFAULT_WORKFLOW: WorkflowData = {
-  metadata: {
-    name: 'Workflow Pipeline',
-    version: '1.0.0'
-  },
-  nodes: [
-    {
-      id: 'node_input_1',
-      type: 'input.image',
-      position: { x: 80, y: 150 },
-      parameters: {
-        denoiseRadius: 0,
-        scaleRatio: 100
-      }
-    },
-    {
-      id: 'node_output_1',
-      type: 'output.image',
-      position: { x: 870, y: 150 },
-      parameters: {
-        scaleRatio: 100,
-        exportFormat: 'png'
-      }
-    },
-    {
-      id: 'node_1786553557312_44hk',
-      type: 'filter.sketch',
-      position: { x: 495, y: 150 },
-      parameters: {
-        layer0Opacity: 0,
-        layer1Opacity: 0,
-        layer2Opacity: 1,
-        layer2MinimumRadius: 0.5,
-        layer3Opacity: 1,
-        layer3ColorMode: 'solid',
-        layer3CustomColor: '#000000',
-        layer3BlendMode: 'soft-light'
-      }
-    }
-  ],
-  connections: [
-    {
-      id: 'conn_1786553564348_k9qr',
-      sourceNodeId: 'node_1786553557312_44hk',
-      sourcePortId: 'image',
-      targetNodeId: 'node_output_1',
-      targetPortId: 'image'
-    },
-    {
-      id: 'conn_1786553566463_focj',
-      sourceNodeId: 'node_input_1',
-      sourcePortId: 'image',
-      targetNodeId: 'node_1786553557312_44hk',
-      targetPortId: 'image'
-    }
-  ]
-};
+import { prepareDemoWorkflow } from '../core/demoWorkflow';
 
 export function useWorkflow() {
-  const [nodes, setNodes] = useState<NodeInstance[]>(DEFAULT_WORKFLOW.nodes);
-  const [connections, setConnections] = useState<Connection[]>(DEFAULT_WORKFLOW.connections);
+  const [nodes, setNodes] = useState<NodeInstance[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   // Global draftParams map for real-time draft state sharing
@@ -79,13 +22,89 @@ export function useWorkflow() {
   const [nodeVersions, setNodeVersions] = useState<Record<string, number>>({});
   const [lastConsumedVersions, setLastConsumedVersions] = useState<Record<string, Record<string, number>>>({});
 
+  const [isInitializing, setIsInitializing] = useState(true);
+
   const { showToast } = useToast();
   const { t } = useLanguage();
 
-  // Initialize ResourceStore on mount
+  // Initialize ResourceStore & Load Saved or Demo Workflow
   useEffect(() => {
-    resourceStore.init();
+    let isMounted = true;
+
+    async function initWorkflow() {
+      await resourceStore.init();
+
+      // Check if user has saved workflow in localStorage
+      const savedJson = localStorage.getItem('suzu_workflow_data');
+      if (savedJson) {
+        try {
+          const deserialized = deserializeWorkflow(savedJson);
+          if (deserialized.nodes && deserialized.nodes.length > 0) {
+            if (isMounted) {
+              setNodes(deserialized.nodes);
+              setConnections(deserialized.connections);
+              setIsInitializing(false);
+            }
+            return;
+          }
+        } catch (e) {
+          console.warn('[initWorkflow] Failed to restore saved workflow, loading demo workflow instead:', e);
+        }
+      }
+
+      // If no saved user workflow exists, load Demo Workflow
+      try {
+        const demoData = await prepareDemoWorkflow();
+        if (isMounted) {
+          setNodes(demoData.workflow.nodes);
+          setConnections(demoData.workflow.connections);
+          setNodeVersions(demoData.nodeVersions);
+          setLastConsumedVersions(demoData.lastConsumedVersions);
+          setIsInitializing(false);
+        }
+      } catch (err) {
+        console.error('[initWorkflow] Failed to prepare demo workflow:', err);
+        if (isMounted) setIsInitializing(false);
+      }
+    }
+
+    initWorkflow();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // Auto-persist workflow state to localStorage upon change (after initial load)
+  useEffect(() => {
+    if (isInitializing) return;
+    try {
+      const json = serializeWorkflow(nodes, connections);
+      localStorage.setItem('suzu_workflow_data', JSON.stringify(json));
+    } catch (e) {
+      console.error('[AutoPersist] Failed to save workflow state:', e);
+    }
+  }, [nodes, connections, isInitializing]);
+
+  // Public method: Reload Demo Workflow on demand
+  const loadDemoWorkflow = useCallback(async () => {
+    try {
+      const demoData = await prepareDemoWorkflow();
+      setNodes(demoData.workflow.nodes);
+      setConnections(demoData.workflow.connections);
+      setSelectedNodeId(null);
+      setDraftParamsMapState({});
+      (window as any).__SUZU_DRAFT_PARAMS__ = {};
+      setNodeVersions(demoData.nodeVersions);
+      setLastConsumedVersions(demoData.lastConsumedVersions);
+      showToast('演示工作流已加载！', 'success');
+      return true;
+    } catch (err) {
+      console.error('Failed to load demo workflow:', err);
+      showToast('加载演示工作流失败', 'error');
+      return false;
+    }
+  }, [showToast]);
 
   const setDraftParams = useCallback((nodeId: string, params: Record<string, any>) => {
     setDraftParamsMapState((prev) => {
@@ -149,7 +168,6 @@ export function useWorkflow() {
       })
     );
   }, []);
-
 
   // Record node execution version & update consumed upstream versions for target node
   const recordNodeExecuted = useCallback((nodeId: string) => {
@@ -244,7 +262,6 @@ export function useWorkflow() {
     (window as any).__SUZU_CLEAN_NODES_DIRTY__ = cleanNodesDirty;
     (window as any).__SUZU_APPLY_EXECUTION_RESULT__ = applyExecutionPathResult;
   }, [markNodeAndDownstreamDirty, cleanNodesDirty, applyExecutionPathResult]);
-
 
   // Update parameter value on a node (Committed State update)
   const updateNodeParameter = useCallback((nodeId: string, paramId: string, value: any) => {
@@ -516,6 +533,8 @@ export function useWorkflow() {
     removeConnection,
     clearWorkflow,
     exportWorkflowJSON,
-    importWorkflowJSON
+    importWorkflowJSON,
+    loadDemoWorkflow,
+    isInitializing
   };
 }

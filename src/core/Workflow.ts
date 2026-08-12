@@ -6,6 +6,10 @@ export interface WorkflowMetadata {
   name?: string;
   description?: string;
   version?: string;
+  schemaVersion?: string;
+  exportedAt?: string;
+  isDemo?: boolean;
+  demoVersion?: number;
   createdAt?: string;
   updatedAt?: string;
 }

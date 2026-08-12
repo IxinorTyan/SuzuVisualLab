@@ -52,6 +52,23 @@ class WorkflowExecutor {
     this.notify();
   }
 
+  /**
+   * 公开 API：恢复/注入节点的运行时执行状态与缓存 Hash，供演示工作流等场景恢复首屏免计算 Clean 状态
+   */
+  public hydrateExecutionState(
+    nodeId: string,
+    state: Partial<NodeExecutionState>,
+    signature?: string
+  ): void {
+    this.setExecutionState(nodeId, state);
+    if (signature && state.outputResourceId) {
+      this.executionCache.set(nodeId, {
+        paramHash: signature,
+        resourceId: state.outputResourceId
+      });
+    }
+  }
+
   getUpstreamNodeIds(targetNodeId: string, connections: Connection[]): string[] {
     const visited = new Set<string>();
     const stack = [targetNodeId];
