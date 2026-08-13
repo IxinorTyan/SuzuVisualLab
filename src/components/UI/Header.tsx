@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Download, Upload, Trash2, Cpu, Play, Languages, Palette, ZoomIn, Zap, FileCode } from 'lucide-react';
+import { Download, Upload, Trash2, Cpu, Play, Languages, Palette, ZoomIn, Zap, FileCode, Github } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { WorkflowJsonModal } from './WorkflowJsonModal';
 
@@ -122,6 +122,38 @@ export const Header: React.FC<HeaderProps> = ({
             {t('appSubtitle')}
           </span>
         </div>
+        <a
+          href="https://github.com/IxinorTyan/SuzuVisualLab"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="GitHub Repository"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            marginLeft: '8px',
+            padding: '4px 8px',
+            borderRadius: '6px',
+            backgroundColor: 'var(--bg-tertiary)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-primary)',
+            fontSize: '12px',
+            textDecoration: 'none',
+            fontWeight: 500,
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--accent-blue)';
+            e.currentTarget.style.color = 'var(--accent-blue)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+        >
+          <Github size={14} />
+          <span>GitHub</span>
+        </a>
       </div>
 
       {/* Action Controls */}

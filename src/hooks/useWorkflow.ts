@@ -27,32 +27,14 @@ export function useWorkflow() {
   const { showToast } = useToast();
   const { t } = useLanguage();
 
-  // Initialize ResourceStore & Load Saved or Demo Workflow
+  // Initialize ResourceStore & Load Demo Workflow (always)
   useEffect(() => {
     let isMounted = true;
 
     async function initWorkflow() {
       await resourceStore.init();
 
-      // Check if user has saved workflow in localStorage
-      const savedJson = localStorage.getItem('suzu_workflow_data');
-      if (savedJson) {
-        try {
-          const deserialized = deserializeWorkflow(savedJson);
-          if (deserialized.nodes && deserialized.nodes.length > 0) {
-            if (isMounted) {
-              setNodes(deserialized.nodes);
-              setConnections(deserialized.connections);
-              setIsInitializing(false);
-            }
-            return;
-          }
-        } catch (e) {
-          console.warn('[initWorkflow] Failed to restore saved workflow, loading demo workflow instead:', e);
-        }
-      }
-
-      // If no saved user workflow exists, load Demo Workflow
+      // Always load Demo Workflow on page load/refresh
       try {
         const demoData = await prepareDemoWorkflow();
         if (isMounted) {
@@ -74,17 +56,6 @@ export function useWorkflow() {
       isMounted = false;
     };
   }, []);
-
-  // Auto-persist workflow state to localStorage upon change (after initial load)
-  useEffect(() => {
-    if (isInitializing) return;
-    try {
-      const json = serializeWorkflow(nodes, connections);
-      localStorage.setItem('suzu_workflow_data', JSON.stringify(json));
-    } catch (e) {
-      console.error('[AutoPersist] Failed to save workflow state:', e);
-    }
-  }, [nodes, connections, isInitializing]);
 
   // Public method: Reload Demo Workflow on demand
   const loadDemoWorkflow = useCallback(async () => {
