@@ -24,17 +24,21 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
       return;
     }
 
-    const { lines, colors, params } = asciiData;
+    const { lines = [], colors = [], params = {} } = asciiData || {};
+
+    // 防护：异步重算间隙 / 空数据时放弃本次绘制（保留上一帧画面）
+    if (!lines || lines.length === 0) return;
+
     const {
       fontFamily = 'monospace',
       fontSize = 8,
       bgColor = '#000000',
       textColor = '#ffffff',
       colorMode = 'mono'
-    } = params;
+    } = params || {};
 
     const cols = lines[0]?.length || 80;
-    const rows = lines.length || 40;
+    const rows = lines.length;
 
     const charW = Math.ceil(fontSize * 0.6);
     const charH = Math.ceil(fontSize * 1.0);
@@ -53,6 +57,7 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
 
     for (let r = 0; r < rows; r++) {
       const line = lines[r];
+      if (!line) continue;
       const y = 8 + r * charH;
       for (let c = 0; c < line.length; c++) {
         const char = line[c];
@@ -107,7 +112,7 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
             style={{
               width: '100%',
               height: '100%',
-              backgroundColor: asciiData?.params.bgColor || '#000000',
+              backgroundColor: asciiData?.params?.bgColor || '#000000',
               overflow: 'hidden',
               borderRadius: '4px',
               padding: '4px',
@@ -118,11 +123,29 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
               position: 'relative'
             }}
           >
-            {status === 'running' ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: '10px' }}>
+            {/* 1. Running 状态：叠加半透明遮罩层，不销毁旧图 */}
+            {status === 'running' && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  zIndex: 2,
+                  borderRadius: '4px'
+                }}
+              >
                 生成 ASCII 中...
               </div>
-            ) : status === 'error' ? (
+            )}
+
+            {/* 2. 主预览区：错误 / 正常渲染图 / 待渲染（旧图常驻，不受 running 影响） */}
+            {status === 'error' ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ef4444', fontSize: '10px', padding: '4px', textAlign: 'center' }}>
                 {errorMessage || '渲染失败'}
               </div>

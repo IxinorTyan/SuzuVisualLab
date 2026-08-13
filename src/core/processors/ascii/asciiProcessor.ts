@@ -82,7 +82,7 @@ export async function processImageToAscii(
   if (!chars) chars = ' ';
 
   if (invertCharSet) {
-    chars = chars.split('').reverse().join('');
+    chars = Array.from(chars).reverse().join('');
   }
 
   // 2. Load Blob to Image

@@ -31,6 +31,8 @@ export function renderAsciiToCanvas(asciiData: AsciiDataData): HTMLCanvasElement
 
   const isColor = colorMode === 'color';
 
+  if (!lines || lines.length === 0) return canvas;
+
   for (let r = 0; r < rows; r++) {
     const line = lines[r];
     if (!line) continue;
