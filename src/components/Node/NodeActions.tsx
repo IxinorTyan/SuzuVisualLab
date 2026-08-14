@@ -71,7 +71,7 @@ export const NodeActions: React.FC<NodeActionsProps> = ({
                 ? isRunning
                   ? t('renderingBtn')
                   : isDirty
-                  ? '渲染提交'
+                  ? t('renderCommit')
                   : actLabel
                 : actLabel}
             </span>

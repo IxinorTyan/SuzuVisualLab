@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
     const workflowData = (window as any).__SUZU_WORKFLOW_DATA__;
     const hasNodes = Array.isArray(workflowData?.nodes) && workflowData.nodes.length > 0;
 
-    if (hasNodes && !window.confirm('导入将替换当前画布，确定要继续吗？')) {
+    if (hasNodes && !window.confirm(t('importConfirm'))) {
       e.target.value = '';
       return;
     }
@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
         try {
           onImport(content);
         } catch (err: any) {
-          alert(err.message || '导入工作流失败');
+          alert(err.message || t('importError'));
         }
       }
     };
@@ -162,7 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setShowBgPopover((prev) => !prev)}
-            title="画布预览背景"
+            title={t('canvasBg')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -180,7 +180,7 @@ export const Header: React.FC<HeaderProps> = ({
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
           >
             <Palette size={14} style={{ color: 'var(--accent-amber)' }} />
-            <span>画布背景</span>
+            <span>{t('canvasBg')}</span>
           </button>
 
           {showBgPopover && (
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
                 border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '12px',
-                width: '200px',
+                width: '210px',
                 boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -201,7 +201,7 @@ export const Header: React.FC<HeaderProps> = ({
                 zIndex: 100
               }}
             >
-              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>大网格背景风格:</div>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t('gridStyle')}</div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button
                   onClick={() => onChangeCanvasBgVariant?.('dots')}
@@ -215,7 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  圆点 (Dots)
+                  {t('dots')}
                 </button>
                 <button
                   onClick={() => onChangeCanvasBgVariant?.('lines')}
@@ -229,7 +229,7 @@ export const Header: React.FC<HeaderProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  线条 (Lines)
+                  {t('lines')}
                 </button>
                 <button
                   onClick={() => onChangeCanvasBgVariant?.('cross')}
@@ -243,17 +243,17 @@ export const Header: React.FC<HeaderProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  交叉 (Cross)
+                  {t('cross')}
                 </button>
               </div>
 
               <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '2px 0' }} />
 
-              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>预览框预设:</div>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{t('previewPreset')}</div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={() => applyCanvasBg('checker')}
-                  title="棋盘格/默认"
+                  title="Checkerboard"
                   style={{
                     width: '24px',
                     height: '24px',
@@ -267,7 +267,7 @@ export const Header: React.FC<HeaderProps> = ({
                 />
                 <button
                   onClick={() => applyCanvasBg('white', '#ffffff')}
-                  title="纯白"
+                  title="White"
                   style={{
                     width: '24px',
                     height: '24px',
@@ -279,7 +279,7 @@ export const Header: React.FC<HeaderProps> = ({
                 />
                 <button
                   onClick={() => applyCanvasBg('gray', '#1a1c23')}
-                  title="暗灰"
+                  title="Dark Gray"
                   style={{
                     width: '24px',
                     height: '24px',
@@ -291,7 +291,7 @@ export const Header: React.FC<HeaderProps> = ({
                 />
                 <button
                   onClick={() => applyCanvasBg('black', '#000000')}
-                  title="纯黑"
+                  title="Black"
                   style={{
                     width: '24px',
                     height: '24px',
@@ -305,7 +305,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Custom Color Input */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>自定颜色:</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('customColor')}</span>
                 <input
                   type="color"
                   value={customColor}
@@ -330,7 +330,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Feature 2: Magnifier Switch Button */}
         <button
           onClick={onToggleMagnifier}
-          title={enableMagnifier ? '关闭局部放大镜' : '开启局部放大镜'}
+          title={t('magnifier')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -346,13 +346,13 @@ export const Header: React.FC<HeaderProps> = ({
           }}
         >
           <ZoomIn size={14} />
-          <span>放大镜 {enableMagnifier ? 'ON' : 'OFF'}</span>
+          <span>{t('magnifier')} {enableMagnifier ? 'ON' : 'OFF'}</span>
         </button>
 
         {/* Feature 2: Edge Flow Animation Switch Button */}
         <button
           onClick={onToggleEdgeAnimation}
-          title={enableEdgeAnimation ? '关闭连线流动动画' : '开启连线流动动画'}
+          title={t('animation')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -368,7 +368,7 @@ export const Header: React.FC<HeaderProps> = ({
           }}
         >
           <Zap size={14} />
-          <span>动画 {enableEdgeAnimation ? 'ON' : 'OFF'}</span>
+          <span>{t('animation')} {enableEdgeAnimation ? 'ON' : 'OFF'}</span>
         </button>
 
         {/* Language Switch Capsule Button */}
@@ -452,7 +452,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Text JSON Code View / Import / Export Modal Toggle Button */}
         <button
           onClick={() => setShowJsonModal(true)}
-          title="文本 JSON 代码管理"
+          title={t('jsonText')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -470,7 +470,7 @@ export const Header: React.FC<HeaderProps> = ({
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
         >
           <FileCode size={14} />
-          <span>JSON 文本</span>
+          <span>{t('jsonText')}</span>
         </button>
 
         <button

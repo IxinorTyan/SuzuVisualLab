@@ -47,7 +47,7 @@ export const NodeHeader: React.FC<NodeHeaderProps> = ({
               marginLeft: '6px'
             }}
           >
-            未提交
+            {t('uncommitted')}
           </span>
         )}
       </div>

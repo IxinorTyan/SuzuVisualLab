@@ -5,8 +5,10 @@ import { workflowExecutor } from '../../../core/WorkflowExecutor';
 import { useToast } from '../../UI/ToastContainer';
 import { ImagePreview } from '../../NodePreview/ImagePreview';
 import { UploadCloud } from 'lucide-react';
+import { useLanguage } from '../../../i18n/LanguageContext';
 
 export function InputNodeContent({ instance, draftParams, onCommitParameter, onAction }: NodeContentProps) {
+  const { t } = useLanguage();
   const { showToast } = useToast();
   const cardFileInputRef = useRef<HTMLInputElement | null>(null);
   const [isCardDragging, setIsCardDragging] = useState(false);
@@ -147,10 +149,10 @@ export function InputNodeContent({ instance, draftParams, onCommitParameter, onA
         >
           <UploadCloud size={28} style={{ color: 'var(--accent-blue)' }} />
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
-            点击或拖拽图片至此卡片
+            {t('dropImageHere')}
           </span>
           <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-            仅为此输入节点绑定图片素材
+            {t('bindImageHint')}
           </span>
         </div>
       ) : (
@@ -206,7 +208,7 @@ export function InputNodeContent({ instance, draftParams, onCommitParameter, onA
               zIndex: 10
             }}
           >
-            更换图片
+            {t('changeImage')}
           </button>
         </div>
       )}

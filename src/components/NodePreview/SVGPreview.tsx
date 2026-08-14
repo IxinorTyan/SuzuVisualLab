@@ -1,10 +1,13 @@
 import React from 'react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface SVGPreviewProps {
   svgString: string | null;
 }
 
 export const SVGPreview: React.FC<SVGPreviewProps> = ({ svgString }) => {
+  const { t } = useLanguage();
+
   if (!svgString) {
     return (
       <div
@@ -20,7 +23,7 @@ export const SVGPreview: React.FC<SVGPreviewProps> = ({ svgString }) => {
           backgroundColor: 'var(--bg-primary)'
         }}
       >
-        <span>无 SVG 数据</span>
+        <span>{t('noSvgData')}</span>
       </div>
     );
   }

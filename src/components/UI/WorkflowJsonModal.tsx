@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Copy, Check, FileCode, ArrowDownToLine } from 'lucide-react';
 import { useToast } from './ToastContainer';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface WorkflowJsonModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
   jsonString,
   onImport
 }) => {
+  const { t } = useLanguage();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
   const [importText, setImportText] = useState('');
@@ -35,7 +37,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(jsonString).then(() => {
         setCopied(true);
-        showToast('JSON 文本已复制到剪贴板！', 'success');
+        showToast(t('copySuccessToast'), 'success');
         setTimeout(() => setCopied(false), 2000);
       }).catch(() => {
         fallbackCopy();
@@ -54,24 +56,24 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
       document.execCommand('copy');
       document.body.removeChild(textArea);
       setCopied(true);
-      showToast('JSON 文本已复制到剪贴板！', 'success');
+      showToast(t('copySuccessToast'), 'success');
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
-      showToast('复制失败，请手动选择复制', 'error');
+      showToast(t('copyErrorToast'), 'error');
     }
   };
 
   const handleImportSubmit = () => {
     setErrorMessage(null);
     if (!importText.trim()) {
-      setErrorMessage('请输入或粘贴工作流 JSON 文本');
+      setErrorMessage(t('emptyImportError'));
       return;
     }
 
     const workflowData = (window as any).__SUZU_WORKFLOW_DATA__;
     const hasNodes = Array.isArray(workflowData?.nodes) && workflowData.nodes.length > 0;
 
-    if (hasNodes && !window.confirm('导入将替换当前画布，确定要继续吗？')) {
+    if (hasNodes && !window.confirm(t('importConfirm'))) {
       return;
     }
 
@@ -81,7 +83,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
         onClose();
       }
     } catch (err: any) {
-      setErrorMessage(err.message || '工作流 JSON 解析或导入失败');
+      setErrorMessage(err.message || t('jsonParseError'));
     }
   };
 
@@ -129,7 +131,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileCode size={18} style={{ color: 'var(--accent-blue)' }} />
             <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              工作流 JSON 纯文本管理
+              {t('jsonTitle')}
             </span>
           </div>
 
@@ -180,7 +182,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
             }}
           >
             <FileCode size={14} />
-            <span>导出 JSON 文本</span>
+            <span>{t('exportTab')}</span>
           </button>
 
           <button
@@ -202,7 +204,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
             }}
           >
             <ArrowDownToLine size={14} />
-            <span>粘贴文本导入</span>
+            <span>{t('importTab')}</span>
           </button>
         </div>
 
@@ -212,7 +214,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', height: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  包含节点结构、排版位置与参数（已自动剔除图片等二进制数据）：
+                  {t('exportDesc')}
                 </span>
                 <button
                   onClick={handleCopy}
@@ -231,7 +233,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
                   }}
                 >
                   {copied ? <Check size={12} /> : <Copy size={12} />}
-                  <span>{copied ? '已复制' : '复制 JSON 文本'}</span>
+                  <span>{copied ? t('copiedJson') : t('copyJson')}</span>
                 </button>
               </div>
 
@@ -260,7 +262,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                在下方文本框中粘贴工作流 JSON 代码字符串进行还原导入：
+                {t('importDesc')}
               </span>
 
               <textarea
@@ -269,7 +271,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
                   setImportText(e.target.value);
                   setErrorMessage(null);
                 }}
-                placeholder="在此粘贴工作流 JSON 文本..."
+                placeholder={t('importPlaceholder')}
                 style={{
                   width: '100%',
                   height: '240px',
@@ -321,7 +323,7 @@ export const WorkflowJsonModal: React.FC<WorkflowJsonModalProps> = ({
                   boxShadow: '0 2px 6px rgba(59, 130, 246, 0.3)'
                 }}
               >
-                <span>解析并导入工作流</span>
+                <span>{t('importSubmit')}</span>
               </button>
             </div>
           )}

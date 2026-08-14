@@ -119,7 +119,7 @@ export function NodeParameterForm({
                   value={val || ''}
                   onChange={(e) => onChange(param.id, e.target.value)}
                 >
-                  <option value="">未选择 (使用默认最新)</option>
+                  <option value="">{t('defaultResourceOption')}</option>
                   {resourceStore.getAllResources().map((res: any) => (
                     <option key={res.id} value={res.id}>
                       {res.name} ({new Date(res.createdAt).toLocaleTimeString()})

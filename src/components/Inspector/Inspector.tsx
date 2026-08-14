@@ -109,9 +109,9 @@ export const Inspector: React.FC<InspectorProps> = ({
                 border: '1px solid rgba(245, 158, 11, 0.4)',
                 lineHeight: '1.2'
               }}
-              title="参数已修改，当前为实时预览，需点击「渲染」应用高清结果"
+              title={t('uncommittedTooltip')}
             >
-              未提交
+              {t('uncommitted')}
             </span>
           )}
         </div>

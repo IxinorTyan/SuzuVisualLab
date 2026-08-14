@@ -21,7 +21,7 @@ const SidebarNodeCard: React.FC<SidebarNodeCardProps & { onOpenGuide?: () => voi
   onCardReorder,
   onOpenGuide
 }) => {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const title = getTranslation(node.title, lang);
   const desc = getTranslation(node.description, lang);
 
@@ -99,7 +99,7 @@ const SidebarNodeCard: React.FC<SidebarNodeCardProps & { onOpenGuide?: () => voi
                 e.stopPropagation();
                 onOpenGuide();
               }}
-              title="查看 SuzuSVG 指南说明"
+              title={t('svgGuideTitle')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -115,7 +115,7 @@ const SidebarNodeCard: React.FC<SidebarNodeCardProps & { onOpenGuide?: () => voi
               }}
             >
               <BookOpen size={12} />
-              <span>指南</span>
+              <span>{t('svgGuideBtn')}</span>
             </button>
           )}
           <Plus size={14} style={{ color: 'var(--text-muted)' }} />

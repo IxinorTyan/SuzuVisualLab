@@ -97,7 +97,7 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
             {originalUrl ? (
               <img src={originalUrl} alt="Original" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             ) : (
-              <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>待图像输入</span>
+              <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{t('pendingInput')}</span>
             )}
           </div>
         </div>
@@ -105,7 +105,7 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
         {/* 2. ASCII Render View */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', height: '100%', overflow: 'hidden' }}>
           <span style={{ fontSize: '9px', fontWeight: 600, color: '#f59e0b' }}>
-            2. ASCII 输出
+            2. {t('asciiOutput')}
           </span>
           <div
             className="node-preview-box nowheel"
@@ -140,14 +140,14 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
                   borderRadius: '4px'
                 }}
               >
-                生成 ASCII 中...
+                {t('generatingAscii')}
               </div>
             )}
 
             {/* 2. 主预览区：错误 / 正常渲染图 / 待渲染（旧图常驻，不受 running 影响） */}
             {status === 'error' ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ef4444', fontSize: '10px', padding: '4px', textAlign: 'center' }}>
-                {errorMessage || '渲染失败'}
+                {errorMessage || t('statusErrorMsg')}
               </div>
             ) : renderedDataUrl ? (
               <img
@@ -158,7 +158,7 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
               />
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: '10px' }}>
-                待渲染
+                {t('pendingRender')}
               </div>
             )}
           </div>

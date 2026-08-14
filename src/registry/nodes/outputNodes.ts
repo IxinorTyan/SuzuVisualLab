@@ -4,7 +4,7 @@ export function registerOutputNodes(registry: NodeRegistry) {
   // 1. 输出文件
   registry.register({
     type: 'output.image',
-    title: { zh: '输出文件', en: 'Export File' },
+    title: { zh: '输出文件', en: 'Output File' },
     category: 'Output',
     description: { zh: '支持将管道输出素材进行比例缩放，打包导出为 PNG, JPG, PDF 或 HTML 文件。', en: 'Export pipeline image outputs with scale adjustments as PNG, JPG, PDF or HTML files.' },
     headerColor: '#10b981', // Emerald accent (Output fixed green)
@@ -162,7 +162,7 @@ export function registerOutputNodes(registry: NodeRegistry) {
   // 3. 输出幻影坦克
   registry.register({
     type: 'output.mirage',
-    title: { zh: '输出幻影坦克', en: 'Mirage Tank Output' },
+    title: { zh: '输出幻影坦克', en: 'Output Mirage Tank' },
     category: 'Output',
     description: { zh: '利用透明度通道合成在黑色与白色背景下显示不同图案的"幻影坦克"图片。', en: 'Creates double-image mirage tanks that display different images on black and white backgrounds.' },
     headerColor: '#10b981', // Emerald accent (Output fixed green)

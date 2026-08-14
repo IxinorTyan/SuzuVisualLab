@@ -10,8 +10,15 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const getDefaultLanguage = (): Language => {
+  if (typeof navigator !== 'undefined' && navigator.language) {
+    return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+  }
+  return 'en';
+};
+
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [lang, setLang] = useState<Language>('zh'); // Default to Chinese as requested
+  const [lang, setLang] = useState<Language>(getDefaultLanguage);
 
   const toggleLang = () => {
     setLang((prev) => (prev === 'zh' ? 'en' : 'zh'));
