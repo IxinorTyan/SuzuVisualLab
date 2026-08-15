@@ -162,9 +162,9 @@ export function registerOutputNodes(registry: NodeRegistry) {
   // 3. 输出幻影坦克
   registry.register({
     type: 'output.mirage',
-    title: { zh: '输出幻影坦克', en: 'Output Mirage Tank' },
+    title: { zh: '输出幻影坦克', en: 'Output Mirage Tank (Hidden Image)' },
     category: 'Output',
-    description: { zh: '利用透明度通道合成在黑色与白色背景下显示不同图案的"幻影坦克"图片。', en: 'Creates double-image mirage tanks that display different images on black and white backgrounds.' },
+    description: { zh: '利用透明度通道合成在黑色与白色背景下显示不同图案的"幻影坦克"图片。', en: 'Creates double-image mirage tanks (hidden images) that display different images on black and white backgrounds.' },
     headerColor: '#10b981', // Emerald accent (Output fixed green)
     defaultSize: { width: 420, height: 420 },
     minSize: { width: 380, height: 360 },

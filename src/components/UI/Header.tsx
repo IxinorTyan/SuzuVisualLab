@@ -118,9 +118,6 @@ export const Header: React.FC<HeaderProps> = ({
           <span style={{ fontSize: '14px', fontWeight: 700, letterSpacing: '0.3px', color: 'var(--text-primary)' }}>
             {t('appTitle')}
           </span>
-          <span style={{ fontSize: '10px', color: 'var(--accent-blue)', marginLeft: '8px', fontWeight: 600 }}>
-            {t('appSubtitle')}
-          </span>
         </div>
         <a
           href="https://github.com/IxinorTyan/SuzuVisualLab"

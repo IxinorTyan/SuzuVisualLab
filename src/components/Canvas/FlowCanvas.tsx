@@ -22,6 +22,7 @@ import {
   coreConnectionsToFlowEdges
 } from '../../adapter/reactFlowAdapter';
 import { getLoopEasterEgg } from '../../utils/loopEasterEgg';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const nodeTypes: NodeTypes = {
   customNode: CustomNode as any
@@ -70,6 +71,7 @@ const FlowCanvasContent: React.FC<FlowCanvasContentProps> = ({
   onUpdateParameter,
   onRemoveNode
 }) => {
+  const { lang } = useLanguage();
   const { screenToFlowPosition } = useReactFlow();
 
   // 构造 nodesMap 方便快速索引 NodeInstance 对象
@@ -198,13 +200,13 @@ const FlowCanvasContent: React.FC<FlowCanvasContentProps> = ({
   // Trigger Anti-Loop Easter Egg Popup ONLY when user finishes mouse drag attempt to connect a cycle
   const onConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState: any) => {
-      if (
-        connectionState &&
-        connectionState.fromNode &&
-        connectionState.toNode &&
-        wouldCreateCycle(connectionState.fromNode.id, connectionState.toNode.id)
-      ) {
-        const egg = getLoopEasterEgg();
+        if (
+          connectionState &&
+          connectionState.fromNode &&
+          connectionState.toNode &&
+          wouldCreateCycle(connectionState.fromNode.id, connectionState.toNode.id)
+        ) {
+          const egg = getLoopEasterEgg(lang);
         const clientX = 'clientX' in event ? event.clientX : (event.touches && event.touches[0] ? event.touches[0].clientX : window.innerWidth / 2);
         const clientY = 'clientY' in event ? event.clientY : (event.touches && event.touches[0] ? event.touches[0].clientY : window.innerHeight / 2);
 
@@ -218,7 +220,7 @@ const FlowCanvasContent: React.FC<FlowCanvasContentProps> = ({
         }
       }
     },
-    [connections, wouldCreateCycle]
+    [connections, wouldCreateCycle, lang]
   );
 
   // Sync node movement back to core workflow state
