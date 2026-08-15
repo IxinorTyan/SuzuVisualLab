@@ -292,23 +292,64 @@ export const MagnifierLens: React.FC<MagnifierLensProps> = ({
       const cropW = (lensSize / zoom) * (cached.canvas.width / renderW);
       const cropH = (lensSize / zoom) * (cached.canvas.height / renderH);
 
+      // 1. Calculate theoretical Source crop bounds
+      let srcX = sx - cropW / 2;
+      let srcY = sy - cropH / 2;
+      let srcW = cropW;
+      let srcH = cropH;
+
+      // 2. Map to Destination Lens Canvas bounds
+      let dstX = 0;
+      let dstY = 0;
+      let dstW = lensSize;
+      let dstH = lensSize;
+
+      // 3. Handle Left / Top boundary overflow (e.g. mouse in left/top half of image)
+      if (srcX < 0) {
+        const diff = -srcX;
+        dstX = (diff / cropW) * lensSize;
+        dstW -= dstX;
+        srcW -= diff;
+        srcX = 0;
+      }
+      if (srcY < 0) {
+        const diff = -srcY;
+        dstY = (diff / cropH) * lensSize;
+        dstH -= dstY;
+        srcH -= diff;
+        srcY = 0;
+      }
+
+      // 4. Handle Right / Bottom boundary overflow (e.g. mouse in right/bottom half of image)
+      if (srcX + srcW > cached.canvas.width) {
+        const diff = (srcX + srcW) - cached.canvas.width;
+        dstW -= (diff / cropW) * lensSize;
+        srcW -= diff;
+      }
+      if (srcY + srcH > cached.canvas.height) {
+        const diff = (srcY + srcH) - cached.canvas.height;
+        dstH -= (diff / cropH) * lensSize;
+        srcH -= diff;
+      }
+
       ctx.clearRect(0, 0, lensSize, lensSize);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
       try {
-        // Fast O(1) small crop drawImage from pre-built cached canvas
-        ctx.drawImage(
-          cached.canvas,
-          Math.max(0, sx - cropW / 2),
-          Math.max(0, sy - cropH / 2),
-          cropW,
-          cropH,
-          0,
-          0,
-          lensSize,
-          lensSize
-        );
+        if (srcW > 0 && srcH > 0 && dstW > 0 && dstH > 0) {
+          ctx.drawImage(
+            cached.canvas,
+            srcX,
+            srcY,
+            srcW,
+            srcH,
+            dstX,
+            dstY,
+            dstW,
+            dstH
+          );
+        }
       } catch (err) {
         // Ignore edge-case draw bounds errors
       }

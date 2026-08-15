@@ -93,9 +93,13 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
           <span style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)' }}>
             1. {t('originalView')}
           </span>
-          <div className="node-preview-box" style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+          <div
+            className="node-preview-box"
+            data-raw-high-res-url={originalUrl || undefined}
+            style={{ width: '100%', height: '100%', overflow: 'hidden' }}
+          >
             {originalUrl ? (
-              <img src={originalUrl} alt="Original" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src={originalUrl} alt="Original" className="preview-img" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             ) : (
               <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{t('pendingInput')}</span>
             )}
@@ -109,6 +113,7 @@ export const AsciiPreview: React.FC<AsciiPreviewProps> = ({
           </span>
           <div
             className="node-preview-box nowheel"
+            data-raw-high-res-url={renderedDataUrl || undefined}
             style={{
               width: '100%',
               height: '100%',
