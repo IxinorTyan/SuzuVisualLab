@@ -12,6 +12,7 @@ interface SidebarNodeCardProps {
   index: number;
   onDragStart: (event: React.DragEvent, nodeType: string) => void;
   onCardReorder?: (dragIndex: number, hoverIndex: number) => void;
+  onClickAdd?: (nodeType: string) => void;
 }
 
 const SidebarNodeCard: React.FC<SidebarNodeCardProps & { onOpenGuide?: () => void }> = ({
@@ -19,6 +20,7 @@ const SidebarNodeCard: React.FC<SidebarNodeCardProps & { onOpenGuide?: () => voi
   index,
   onDragStart,
   onCardReorder,
+  onClickAdd,
   onOpenGuide
 }) => {
   const { lang, t } = useLanguage();
@@ -50,16 +52,18 @@ const SidebarNodeCard: React.FC<SidebarNodeCardProps & { onOpenGuide?: () => voi
       onDragStart={handleCardDragStart}
       onDragOver={handleCardDragOver}
       onDrop={handleCardDrop}
+      onClick={() => onClickAdd?.(node.type)}
       style={{
         backgroundColor: 'var(--bg-node)',
         border: '1px solid var(--border-color)',
         borderRadius: '6px',
         padding: '10px 12px',
-        cursor: 'grab',
+        cursor: 'pointer',
         transition: 'all 0.15s ease',
         display: 'flex',
         flexDirection: 'column',
-        gap: '4px'
+        gap: '4px',
+        touchAction: 'manipulation'
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = 'var(--accent-blue)';
@@ -118,7 +122,21 @@ const SidebarNodeCard: React.FC<SidebarNodeCardProps & { onOpenGuide?: () => voi
               <span>{t('svgGuideBtn')}</span>
             </button>
           )}
-          <Plus size={14} style={{ color: 'var(--text-muted)' }} />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '20px',
+              height: '20px',
+              borderRadius: '4px',
+              backgroundColor: 'var(--bg-tertiary)',
+              color: 'var(--accent-blue)'
+            }}
+            title={t('tapToAddHint')}
+          >
+            <Plus size={14} />
+          </div>
         </div>
       </div>
       {desc && (
@@ -130,13 +148,18 @@ const SidebarNodeCard: React.FC<SidebarNodeCardProps & { onOpenGuide?: () => voi
   );
 };
 
-export const NodeSidebar: React.FC = () => {
+interface NodeSidebarProps {
+  onAddNodeDirectly?: (nodeType: string) => void;
+  onClose?: () => void;
+  style?: React.CSSProperties;
+}
+
+export const NodeSidebar: React.FC<NodeSidebarProps> = ({ onAddNodeDirectly, onClose, style }) => {
   const { lang, t } = useLanguage();
   const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -202,30 +225,53 @@ export const NodeSidebar: React.FC = () => {
   return (
     <aside
       style={{
-        width: '260px',
+        width: '280px',
         height: '100%',
         backgroundColor: 'var(--bg-secondary)',
         borderRight: '1px solid var(--border-color)',
         display: 'flex',
         flexDirection: 'column',
-        zIndex: 10,
-        userSelect: 'none'
+        zIndex: 20,
+        userSelect: 'none',
+        boxShadow: '2px 0 12px rgba(0,0,0,0.2)',
+        ...style
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: '16px',
+          padding: '14px 16px',
           borderBottom: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px'
+          justifyContent: 'space-between'
         }}
       >
-        <Layers size={18} style={{ color: 'var(--accent-blue)' }} />
-        <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-          {t('nodeLibrary')}
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Layers size={18} style={{ color: 'var(--accent-blue)' }} />
+          <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            {t('nodeLibrary')}
+          </h2>
+        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '4px 6px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              fontSize: '12px'
+            }}
+            title={t('collapseSidebar')}
+          >
+            <ChevronRight size={18} />
+          </button>
+        )}
       </div>
 
 
@@ -271,6 +317,7 @@ export const NodeSidebar: React.FC = () => {
                 index={idx}
                 onDragStart={onDragStart}
                 onCardReorder={handleCardReorder}
+                onClickAdd={onAddNodeDirectly}
               />
             ))}
             {filteredNodes.length === 0 && (
@@ -316,6 +363,7 @@ export const NodeSidebar: React.FC = () => {
                         index={idx}
                         onDragStart={onDragStart}
                         onCardReorder={handleCardReorder}
+                        onClickAdd={onAddNodeDirectly}
                         onOpenGuide={() => setIsGuideOpen(true)}
                       />
                     ))}

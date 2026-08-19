@@ -15,6 +15,8 @@ interface InspectorProps {
   onCommitAndExecute?: (nodeId: string, draftParams?: Record<string, any>) => void;
   onUpdateParameter: (nodeId: string, paramId: string, value: any) => void;
   onRemoveNode: (nodeId: string) => void;
+  onClose?: () => void;
+  style?: React.CSSProperties;
 }
 
 export const Inspector: React.FC<InspectorProps> = ({
@@ -23,7 +25,9 @@ export const Inspector: React.FC<InspectorProps> = ({
   onDraftParamsChange,
   onCommitAndExecute,
   onUpdateParameter,
-  onRemoveNode
+  onRemoveNode,
+  onClose,
+  style
 }) => {
   const { lang, t } = useLanguage();
 
@@ -31,28 +35,76 @@ export const Inspector: React.FC<InspectorProps> = ({
     return (
       <aside
         style={{
-          width: '280px',
+          width: '300px',
           height: '100%',
           backgroundColor: 'var(--bg-secondary)',
           borderLeft: '1px solid var(--border-color)',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-          textAlign: 'center',
-          color: 'var(--text-muted)',
-          zIndex: 10,
-          userSelect: 'none'
+          zIndex: 20,
+          userSelect: 'none',
+          boxShadow: '-2px 0 12px rgba(0,0,0,0.2)',
+          ...style
         }}
       >
-        <Sliders size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
-        <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-          {t('noNodeSelected')}
-        </h3>
-        <p style={{ fontSize: '12px', marginTop: '6px', lineHeight: '1.4' }}>
-          {t('selectNodeHint')}
-        </p>
+        {/* Header */}
+        <div
+          style={{
+            padding: '14px 16px',
+            borderBottom: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Settings size={18} style={{ color: 'var(--accent-purple)' }} />
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {t('inspectorTitle')}
+            </h2>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              title={t('collapseInspector')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '4px 6px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '12px'
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Empty placeholder body */}
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            textAlign: 'center',
+            color: 'var(--text-muted)'
+          }}
+        >
+          <Sliders size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+          <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            {t('noNodeSelected')}
+          </h3>
+          <p style={{ fontSize: '12px', marginTop: '6px', lineHeight: '1.4' }}>
+            {t('selectNodeHint')}
+          </p>
+        </div>
       </aside>
     );
   }
@@ -72,20 +124,22 @@ export const Inspector: React.FC<InspectorProps> = ({
   return (
     <aside
       style={{
-        width: '280px',
+        width: '300px',
         height: '100%',
         backgroundColor: 'var(--bg-secondary)',
         borderLeft: '1px solid var(--border-color)',
         display: 'flex',
         flexDirection: 'column',
-        zIndex: 10,
-        userSelect: 'none'
+        zIndex: 20,
+        userSelect: 'none',
+        boxShadow: '-2px 0 12px rgba(0,0,0,0.2)',
+        ...style
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: '16px',
+          padding: '14px 16px',
           borderBottom: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',
@@ -115,24 +169,45 @@ export const Inspector: React.FC<InspectorProps> = ({
             </span>
           )}
         </div>
-        <button
-          onClick={() => onRemoveNode(node.id)}
-          title={t('deleteNode')}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#ef4444',
-            cursor: 'pointer',
-            padding: '4px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center'
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)')}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-          <Trash2 size={16} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <button
+            onClick={() => onRemoveNode(node.id)}
+            title={t('deleteNode')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#ef4444',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <Trash2 size={16} />
+          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              title={t('collapseInspector')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '4px 6px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '12px'
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>

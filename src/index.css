@@ -178,21 +178,50 @@ html, body, #root {
   color: var(--text-secondary);
 }
 
-/* Custom React Flow Handle Styling for High Visibility */
+/* Custom React Flow Handle Styling for High Visibility & Touch Support */
 .react-flow__handle {
-  width: 12px !important;
-  height: 12px !important;
+  width: 14px !important;
+  height: 14px !important;
   border-radius: 50% !important;
-  border: 2px solid #1e2029 !important;
-  box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+  border: 2.5px solid #ffffff !important;
+  background-color: var(--accent-blue) !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.8), 0 0 4px #000000;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   z-index: 100 !important;
+  touch-action: none;
 }
 
-.react-flow__handle:hover {
-  transform: scale(1.4);
-  box-shadow: 0 0 12px rgba(59, 130, 246, 1);
+/* 移动端 36px 隐形触控热区 */
+.react-flow__handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: all;
+}
+
+.react-flow__handle:hover,
+.react-flow__handle:active {
+  transform: scale(1.35);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 1), 0 0 6px #ffffff;
   cursor: crosshair !important;
+}
+
+/* 点选连线激活高亮状态 */
+.react-flow__handle.connecting-source {
+  animation: pulse-handle 1s infinite alternate;
+  background-color: #f59e0b !important;
+  box-shadow: 0 0 14px #f59e0b, 0 0 4px #ffffff !important;
+}
+
+@keyframes pulse-handle {
+  0% { transform: scale(1.1); box-shadow: 0 0 8px #f59e0b; }
+  100% { transform: scale(1.5); box-shadow: 0 0 18px #f59e0b, 0 0 6px #ffffff; }
 }
 
 .react-flow__handle-left {

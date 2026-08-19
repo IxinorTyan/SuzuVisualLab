@@ -3,11 +3,22 @@ import { Handle, Position } from '@xyflow/react';
 import { LocalizedPortDefinition } from '../../core/NodeDefinition';
 
 interface NodeHandlesProps {
+  nodeId?: string;
   inputs: LocalizedPortDefinition[];
   outputs: LocalizedPortDefinition[];
 }
 
-export const NodeHandles: React.FC<NodeHandlesProps> = ({ inputs, outputs }) => {
+export const NodeHandles: React.FC<NodeHandlesProps> = ({ nodeId, inputs, outputs }) => {
+  const handlePortClick = (e: React.MouseEvent, portId: string, isSource: boolean) => {
+    e.stopPropagation();
+    if (!nodeId) return;
+    window.dispatchEvent(
+      new CustomEvent('suzu_port_handle_clicked', {
+        detail: { nodeId, portId, isSource }
+      })
+    );
+  };
+
   return (
     <>
       {inputs.map((port) => (
@@ -16,6 +27,7 @@ export const NodeHandles: React.FC<NodeHandlesProps> = ({ inputs, outputs }) => 
           type="target"
           position={Position.Left}
           id={port.id}
+          onClick={(e) => handlePortClick(e, port.id, false)}
           style={{
             position: 'absolute',
             left: '-16px',
@@ -40,6 +52,7 @@ export const NodeHandles: React.FC<NodeHandlesProps> = ({ inputs, outputs }) => 
           type="source"
           position={Position.Right}
           id={port.id}
+          onClick={(e) => handlePortClick(e, port.id, true)}
           style={{
             position: 'absolute',
             right: '-16px',

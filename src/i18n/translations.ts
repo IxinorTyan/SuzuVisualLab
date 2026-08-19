@@ -115,7 +115,19 @@ export const translations = {
     catOutput: '输出节点',
     catColor: '色彩调整',
     catMath: '数学运算',
-    catUtility: '实用工具'
+    catUtility: '实用工具',
+
+    // Mobile & Panel Controls
+    addNodeBtn: '添加节点',
+    collapseSidebar: '收起节点库',
+    expandSidebar: '展开节点库',
+    collapseInspector: '收起属性面板',
+    expandInspector: '展开属性面板',
+    tapToAddHint: '点击直接添加至画布',
+    connectingModeTitle: '连线中...',
+    connectingModeHint: '请点击目标节点的输入端口以完成连接',
+    connectingModeHintInputFirst: '请点击来源节点的输出端口以完成连接',
+    cancelConnecting: '取消连线'
   },
   en: {
     // Header & Controls
@@ -231,6 +243,18 @@ export const translations = {
     catOutput: 'Output',
     catColor: 'Color',
     catMath: 'Math',
-    catUtility: 'Utility'
+    catUtility: 'Utility',
+
+    // Mobile & Panel Controls
+    addNodeBtn: 'Add Node',
+    collapseSidebar: 'Collapse Library',
+    expandSidebar: 'Expand Library',
+    collapseInspector: 'Collapse Inspector',
+    expandInspector: 'Expand Inspector',
+    tapToAddHint: 'Click to add directly to canvas',
+    connectingModeTitle: 'Connecting...',
+    connectingModeHint: 'Click target node input port to connect',
+    connectingModeHintInputFirst: 'Click source node output port to connect',
+    cancelConnecting: 'Cancel'
   }
 };

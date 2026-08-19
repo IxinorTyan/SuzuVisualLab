@@ -384,7 +384,7 @@ export const CustomNode = memo(({ data, selected }: NodeProps) => {
         boxShadow: isDirty ? '0 0 0 2px #f59e0b, 0 4px 12px rgba(245, 158, 11, 0.3)' : undefined
       }}
     >
-      <NodeHandles inputs={definition.inputs} outputs={definition.outputs} />
+      <NodeHandles nodeId={instance.id} inputs={definition.inputs} outputs={definition.outputs} />
 
       <NodeResizer
         isVisible={selected}

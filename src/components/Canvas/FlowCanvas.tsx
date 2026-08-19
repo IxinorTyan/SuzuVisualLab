@@ -71,8 +71,15 @@ const FlowCanvasContent: React.FC<FlowCanvasContentProps> = ({
   onUpdateParameter,
   onRemoveNode
 }) => {
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const { screenToFlowPosition } = useReactFlow();
+
+  // 双向点选连线状态（Tap-to-Connect for mobile/touch）
+  const [connectingPort, setConnectingPort] = React.useState<{
+    nodeId: string;
+    portId: string;
+    isSource: boolean;
+  } | null>(null);
 
   // 构造 nodesMap 方便快速索引 NodeInstance 对象
   const nodesMap = useMemo(() => {
@@ -145,6 +152,11 @@ const FlowCanvasContent: React.FC<FlowCanvasContentProps> = ({
     },
     [screenToFlowPosition, onAddNode]
   );
+
+  // Expose screenToFlowPosition globally for mobile Center-Add-Node feature
+  React.useEffect(() => {
+    (window as any).__SUZU_SCREEN_TO_FLOW__ = screenToFlowPosition;
+  }, [screenToFlowPosition]);
 
   // Trace upstream connections from sourceId to check if targetId is already an ancestor (would create a cycle)
   const wouldCreateCycle = useCallback(
@@ -231,6 +243,45 @@ const FlowCanvasContent: React.FC<FlowCanvasContentProps> = ({
     [onNodePositionChange]
   );
 
+  // Precise Bidirectional Tap-to-Connect via Custom Event from Port Handles
+  React.useEffect(() => {
+    const handlePortClick = (e: any) => {
+      const { nodeId, portId, isSource } = e.detail || {};
+      if (!nodeId || !portId) return;
+
+      if (!connectingPort) {
+        // 第一次点击：记录该端口（无论是输入端口还是输出端口），进入连线待命模式
+        setConnectingPort({ nodeId, portId, isSource });
+        return;
+      }
+
+      // 如果重复点击了同一种方向的端口（例如先点输入又点另一个输入，或同节点），更新当前待连接端口
+      if (connectingPort.isSource === isSource) {
+        setConnectingPort({ nodeId, portId, isSource });
+        return;
+      }
+
+      // 第二次点击了互补端口（一个输入，一个输出），立即判定并建立连线
+      const sourceInfo = isSource ? { nodeId, portId } : connectingPort;
+      const targetInfo = isSource ? connectingPort : { nodeId, portId };
+
+      if (sourceInfo.nodeId !== targetInfo.nodeId && !wouldCreateCycle(sourceInfo.nodeId, targetInfo.nodeId)) {
+        onAddConnection({
+          sourceNodeId: sourceInfo.nodeId,
+          sourcePortId: sourceInfo.portId,
+          targetNodeId: targetInfo.nodeId,
+          targetPortId: targetInfo.portId
+        });
+      }
+      setConnectingPort(null);
+    };
+
+    window.addEventListener('suzu_port_handle_clicked', handlePortClick);
+    return () => {
+      window.removeEventListener('suzu_port_handle_clicked', handlePortClick);
+    };
+  }, [connectingPort, wouldCreateCycle, onAddConnection]);
+
   // Handle selecting nodes or clicking empty canvas
   const onSelectionChange = useCallback(
     (params: { nodes: any[] }) => {
@@ -257,6 +308,50 @@ const FlowCanvasContent: React.FC<FlowCanvasContentProps> = ({
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
+      {/* 手机端双向点选连线状态悬浮提示 */}
+      {connectingPort && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 100,
+            backgroundColor: '#f59e0b',
+            color: '#000000',
+            fontWeight: 600,
+            fontSize: '12px',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}
+        >
+          <span>
+            🔗 {connectingPort.isSource ? t('connectingModeHint') : t('connectingModeHintInputFirst')}
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setConnectingPort(null);
+            }}
+            style={{
+              background: '#000000',
+              color: '#ffffff',
+              border: 'none',
+              padding: '2px 8px',
+              borderRadius: '10px',
+              fontSize: '11px',
+              cursor: 'pointer'
+            }}
+          >
+            {t('cancelConnecting')}
+          </button>
+        </div>
+      )}
+
       <ReactFlow
         nodes={rfNodes}
         edges={flowEdges}
