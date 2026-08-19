@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { resourceStore } from '../core/ResourceStore';
-import { workflowExecutor } from '../core/WorkflowExecutor';
-import { createLowResBlob } from '../utils/previewUtils';
+import { resolveUpstreamResourceId } from './useUpstreamResource';
 import { processImageToSketch } from '../core/processors/sketch/sketchProcessor';
 import { processImageToRgbSplit } from '../core/processors/rgbSplit/rgbSplitProcessor';
 import { processImageToPixel } from '../core/processors/pixel/pixelProcessor';
 import { processImageToAscii, AsciiDataData } from '../core/processors/ascii/asciiProcessor';
+import { processImageToColorQuantization } from '../core/processors/colorQuantization/colorQuantizationProcessor';
 import { processImageToMirage } from '../core/processors/mirage/mirageProcessor';
 
 export interface NodeLivePreviewResult {
@@ -62,13 +62,8 @@ export function useNodeLivePreview(
 
     try {
       if (nodeType === 'output.mirage') {
-        const coverConn = workflowData?.connections?.find((c: any) => c.targetNodeId === nodeId && c.targetPortId === 'coverImage');
-        const innerConn = workflowData?.connections?.find((c: any) => c.targetNodeId === nodeId && c.targetPortId === 'innerImage');
-
-        if (!coverConn || !innerConn) return;
-
-        const coverResId = workflowExecutor.getExecutionState(coverConn.sourceNodeId).outputResourceId || workflowData.nodes?.find((n: any) => n.id === coverConn.sourceNodeId)?.parameters?.resourceId;
-        const innerResId = workflowExecutor.getExecutionState(innerConn.sourceNodeId).outputResourceId || workflowData.nodes?.find((n: any) => n.id === innerConn.sourceNodeId)?.parameters?.resourceId;
+        const coverResId = resolveUpstreamResourceId(nodeId, 'coverImage');
+        const innerResId = resolveUpstreamResourceId(nodeId, 'innerImage');
 
         if (!coverResId || !innerResId) return;
 
@@ -77,20 +72,16 @@ export function useNodeLivePreview(
 
         if (!coverRes?.blob || !innerRes?.blob) return;
 
-        const [lowResCover, lowResInner] = await Promise.all([
-          createLowResBlob(coverRes.blob, 400),
-          createLowResBlob(innerRes.blob, 400)
-        ]);
-
         if (!selected || previewTaskVersionRef.current !== taskVersion) return;
 
-        const result = await processImageToMirage(lowResCover, lowResInner, {
-          maxSize: 400,
-          innerScale: draftParams.innerScale,
-          coverScale: draftParams.coverScale,
-          innerWeight: draftParams.innerWeight,
-          innerDesat: draftParams.innerDesat,
-          coverDesat: draftParams.coverDesat
+        const result = await processImageToMirage(coverRes.blob, innerRes.blob, {
+          isColored: draftParams.isColored ?? true,
+          maxSize: 0,
+          innerScale: draftParams.innerScale ?? 0.3,
+          coverScale: draftParams.coverScale ?? 0.2,
+          innerWeight: draftParams.innerWeight ?? 0.7,
+          innerDesat: draftParams.innerDesat ?? 0,
+          coverDesat: draftParams.coverDesat ?? 0
         });
 
         if (!selected || previewTaskVersionRef.current !== taskVersion) return;
@@ -103,31 +94,23 @@ export function useNodeLivePreview(
 
       let sourceResId: string | undefined = undefined;
 
-      if (workflowData && workflowData.connections) {
-        const incomingConn = workflowData.connections.find((c: any) => c.targetNodeId === nodeId);
-        if (incomingConn) {
-          const upstreamState = workflowExecutor.getExecutionState(incomingConn.sourceNodeId);
-          sourceResId = upstreamState.outputResourceId;
-          if (!sourceResId) {
-            const upstreamNode = workflowData.nodes.find((n: any) => n.id === incomingConn.sourceNodeId);
-            if (upstreamNode) sourceResId = upstreamNode.parameters.resourceId;
-          }
-        }
-      }
-
       if (nodeType === 'input.image') {
         const activeNode = workflowData?.nodes?.find((n: any) => n.id === nodeId);
         sourceResId = activeNode?.parameters?.resourceId;
+      } else {
+        // 普通滤镜/输出节点：必须严格且只能获取直连上游输出的 resourceId，绝不能使用自身输出！
+        sourceResId = resolveUpstreamResourceId(nodeId);
       }
 
       const inputRes = sourceResId ? resourceStore.getResource(sourceResId) : undefined;
       if (!inputRes || !inputRes.blob) return;
 
-      const lowResBlob = await createLowResBlob(inputRes.blob, 512);
+      // 直接使用全分辨率原始 Blob 进行实时预览，杜绝分辨率缩放产生的二次像素化失真
+      const originalBlob = inputRes.blob;
       if (!selected || previewTaskVersionRef.current !== taskVersion) return;
 
       if (nodeType === 'filter.sketch') {
-        const result = await processImageToSketch(lowResBlob, {
+        const result = await processImageToSketch(originalBlob, {
           layer0Opacity: draftParams.layer0Opacity,
           layer1Opacity: draftParams.layer1Opacity,
           layer2Opacity: draftParams.layer2Opacity,
@@ -145,7 +128,7 @@ export function useNodeLivePreview(
           setPreviewUrl(createManagedUrl(tempRes.blob));
         }
       } else if (nodeType === 'filter.rgbSplit') {
-        const result = await processImageToRgbSplit(lowResBlob, {
+        const result = await processImageToRgbSplit(originalBlob, {
           noiseAmount: draftParams.noiseAmount,
           l1OffsetX: draftParams.l1OffsetX,
           l1OffsetY: draftParams.l1OffsetY,
@@ -165,7 +148,7 @@ export function useNodeLivePreview(
           setPreviewUrl(createManagedUrl(tempRes.blob));
         }
       } else if (nodeType === 'filter.pixel') {
-        const result = await processImageToPixel(lowResBlob, {
+        const result = await processImageToPixel(originalBlob, {
           scaleRatio: draftParams.scaleRatio,
           enableThreshold: draftParams.enableThreshold,
           threshold: draftParams.threshold,
@@ -180,8 +163,20 @@ export function useNodeLivePreview(
         if (tempRes && tempRes.blob) {
           setPreviewUrl(createManagedUrl(tempRes.blob));
         }
+      } else if (nodeType === 'filter.colorQuantization') {
+        const result = await processImageToColorQuantization(originalBlob, {
+          k: draftParams.k,
+          maxIterations: draftParams.maxIterations
+        });
+
+        if (!selected || previewTaskVersionRef.current !== taskVersion) return;
+
+        const tempRes = resourceStore.getResource(result.resourceId);
+        if (tempRes && tempRes.blob) {
+          setPreviewUrl(createManagedUrl(tempRes.blob));
+        }
       } else if (nodeType === 'output.ascii') {
-        const result = await processImageToAscii(lowResBlob, {
+        const result = await processImageToAscii(originalBlob, {
           preset: draftParams.preset,
           customCharSet: draftParams.customCharSet,
           invertCharSet: draftParams.invertCharSet,

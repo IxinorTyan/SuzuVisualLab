@@ -10,7 +10,7 @@ export interface UpstreamResourceResult {
 /**
  * Resolves the valid outputResourceId ONLY from the DIRECT upstream connected node (no recursion, strict filter isolation)
  */
-function resolveUpstreamResourceId(nodeId: string, targetPortId?: string): string | undefined {
+export function resolveUpstreamResourceId(nodeId: string, targetPortId?: string): string | undefined {
   const workflowData = (window as any).__SUZU_WORKFLOW_DATA__;
   if (!workflowData || !workflowData.connections) return undefined;
 
@@ -82,9 +82,9 @@ export function useUpstreamResource(nodeId: string, targetPortId?: string): Upst
 
 /**
  * Universal display URL resolver:
- * A. isSelected && livePreviewUrl -> live draft preview
- * B. renderedUrl (committed parameter resource) -> formal render
- * C. null -> placeholder (never fall back to originalUrl!)
+ * 1. 如果有实时预览（草稿调参中），且处于选中状态，展示实时预览图
+ * 2. 否则如果已正式渲染过，展示已渲染的高清成果图
+ * 3. 否则返回 null 占位
  */
 export function useDisplayUrl(
   isSelected: boolean,
@@ -92,15 +92,11 @@ export function useDisplayUrl(
   renderedUrl?: string | null,
   _originalUrl?: string | null
 ): string | null {
-  // 1. 如果当前被选中且有实时预览（草稿），优先显示实时预览
   if (isSelected && livePreviewUrl) {
     return livePreviewUrl;
   }
-  // 2. 如果当前节点已经正式渲染成功过，显示渲染成品图
   if (renderedUrl) {
     return renderedUrl;
   }
-  // 3. 如果既没选中预览，又没正式渲染过，绝对不能 fallback 到 originalUrl！
-  // 必须返回 null，让右侧成品预览面板显示“未渲染 / 待渲染”占位。
   return null;
 }

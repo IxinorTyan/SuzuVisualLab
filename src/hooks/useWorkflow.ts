@@ -321,14 +321,8 @@ export function useWorkflow() {
     // E. Record execution version
     recordNodeExecuted(nodeId);
 
-    // F. Write back outputResourceId (non input.image nodes)
-    const state = workflowExecutor.getExecutionState(nodeId);
-    if (state.outputResourceId && node.type !== 'input.image') {
-      updateNodeParameter(nodeId, 'resourceId', state.outputResourceId);
-    }
-
     showToast('提交渲染成功！', 'success');
-  }, [nodes, connections, draftParamsMap, nodeVersions, updateNodeParametersBatch, updateNodeParameter, recordNodeExecuted, showToast]);
+  }, [nodes, connections, draftParamsMap, nodeVersions, updateNodeParametersBatch, recordNodeExecuted, showToast]);
 
   // Rule 1: Add Node
   const addNode = useCallback(

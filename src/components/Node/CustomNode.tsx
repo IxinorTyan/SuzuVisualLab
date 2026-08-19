@@ -192,9 +192,6 @@ export const CustomNode = memo(({ data, selected }: NodeProps) => {
         }
 
         const executionState = workflowExecutor.getExecutionState(instance.id);
-        if (executionState.outputResourceId && instance.type !== 'input.image') {
-          onParameterChange?.(instance.id, 'resourceId', executionState.outputResourceId);
-        }
 
         if (executionState.outputResourceId) {
           const res = resourceStore.getResource(executionState.outputResourceId);
